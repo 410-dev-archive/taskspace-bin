@@ -2,8 +2,12 @@
  Manage your Mac Desktop as a container!
 
 
+**PLEASE USE RELEASE VERSION**
+The taskspace library migration is not supported in the release version, but the code is available. However, the migration code is too unstable, therefore you have a chance of loosing your data. Please use the release version which is more stable.
 
-**WARNING: If you are using iCloud Desktop & Document sync, you may use excessive network transmission. Unless you don't have limit & have small files in your desktop directory or don't care the excessive use of network transmission, please do not use this software. Also, you are not recommended if you work on large files / too many small files on your desktop. Swapping large or numerous files takes long time, and consumes SSD lifespan.**
+
+
+**WARNING: If you are using iCloud Desktop & Document sync, you may use excessive network transmission. Unless you don't have limit & have small files in your desktop directory or don't care the excessive use of network transmission, please do not use this software. Also, you are not recommended if you work on large files / too many small files on your desktop. Swapping large or numerous files takes long time, and consumes SSD lifespan. I am not responsible for any side effects coming from this sowftware.**
 
 
 
