@@ -9,10 +9,8 @@ import Foundation
 
 let arguments = CommandLine.arguments
 
-if !Database.initDirectory() {
+if !Database._init(forceRoot: nil) {
     print("Failed to prepare for base environment.")
-}else{
-    print("TASKSPACE 1.0 - Written by Hoyoun Song")
 }
 
 if !Database.verify(key: "default_setup") || !Database.getData(key: "default_setup").elementsEqual("done") {
@@ -49,6 +47,8 @@ if arguments.count < 2 {
     print("switch-nsync [container name]   Switch to specified workspace container without syncing")
     print("switch       [container name]   Switch to specified workspace container")
     print("current                         Shows which workspace container is in use")
+    print("setroot      [path]             Set container root location to given path (Type default to set to default)")
+    print("root                            Shows the root path of library")
     exit(0)
 }
 
@@ -61,6 +61,8 @@ if arguments[1].elementsEqual("help") {
     print("switch-nsync [container name]   Switch to specified workspace container without syncing")
     print("switch       [container name]   Switch to specified workspace container")
     print("current                         Shows which workspace container is in use")
+    print("setroot      [path]             Set container root location to given path (Type default to set to default)")
+    print("root                            Shows the root path of library")
 }else if arguments[1].elementsEqual("list") {
     print("Containers you have: ")
     NSSwiftUtils.executeShellScript("ls", "-1", Database.containersPath)
@@ -145,6 +147,85 @@ if arguments[1].elementsEqual("help") {
     print("You are currently using: \(Database.getData(key: Database.key_selected))")
 }else if arguments[1].elementsEqual("force-restart") {
     Database.removeKey(key: Database.key_inProcess)
+}else if arguments[1].elementsEqual("root") {
+    print("Current Root: \(Database.databaseLocation)")
+    if Database.databaseLocation.elementsEqual(Database.originalDatabaseLocation) {
+        print("(Default)")
+    }else{
+        print("(Customized)")
+    }
+}else if arguments.count == 3 && arguments[1].elementsEqual("setroot") {
+    var path = arguments[2]
+    if !arguments[2].hasSuffix("/") {
+        path = arguments[2] + "/"
+    }
+    
+    
+    
+    if arguments[2].contains("default") {
+        print("Resetting root location!")
+        path = Database.originalDatabaseLocation
+    }
+    
+    
+    if NSSwiftUtils.createDirectoryWithParentsDirectories(to: path) && NSSwiftUtils.doesTheFileExist(at: path) {
+        print("Setting root location to: \(path)")
+        print("Syncing containers...")
+        // SAME COMMAND FROM SYNC
+        
+        
+        let currentWorkspace = Database.getData(key: Database.key_selected)
+        if !Database.isContainerAvailable(name: currentWorkspace) {
+            print("There is no such workspace container: \(currentWorkspace)")
+            exit(9)
+        }else{
+            let returned = Database.updateDesktop()
+            if returned.elementsEqual("Update was successful.") {
+                print("Workspace container \(currentWorkspace) is up-to-date.")
+            }else{
+                print(returned)
+                exit(9)
+            }
+        }
+        
+        
+        
+        // END OF SYNC
+        if !Database.addKey(key: Database.key_root_emu, data: path) {
+            print("Failed to write emulated root configuration.")
+            exit(9)
+        }
+        let originalContainerPath = Database.containersPath
+        let originalConfigPath = Database.keydataStore
+        let originalLogsPath = Database.logs
+        print("Updating inner structure...")
+        if !Database._init(forceRoot: Database.originalDatabaseLocation) {
+            print("Update failed.")
+            exit(9)
+        }
+        print("Migrating taskspace containers...")
+        if (NSSwiftUtils.executeShellScript("cp", "-r", originalContainerPath, Database.containersPath) != 0) {
+            print("Taskspace migration failed. Please copy all contents from \(originalContainerPath)   to   \(Database.containersPath)")
+            exit(9)
+        }
+        
+        print("Migrating configurations...")
+        if (NSSwiftUtils.executeShellScript("cp", "-r", originalConfigPath, Database.keydataStore) != 0) {
+            print("Taskspace configurations migration failed. Please copy all contents from \(originalConfigPath)   to   \(Database.keydataStore)")
+            exit(9)
+        }
+        
+        print("Migrating logs...")
+        if (NSSwiftUtils.executeShellScript("cp", "-r", originalLogsPath, Database.logs) != 0) {
+            print("Taskspace configurations migration failed. Please copy all contents from \(originalLogsPath)   to   \(Database.logs)")
+            exit(9)
+        }
+        
+        print("Task finished.")
+    }else{
+        print("Failed to set root location to \(path)")
+        exit(9)
+    }
 }else {
     print("No such verb with matching parameter: \(arguments[1])")
     exit(9)

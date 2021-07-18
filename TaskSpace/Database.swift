@@ -8,20 +8,44 @@
 import Foundation
 public class Database {
     
-    public static let databaseLocation = NSSwiftUtils.getHomeDirectory() + "Library/Taskspace/";
-    public static let containersPath = databaseLocation + "containers/";
-    public static let keydataStore = databaseLocation + "keys/";
-    public static let buffer_switch = databaseLocation + "buffer_switch";
-    public static let buffer_update = databaseLocation + "buffer_update";
-    public static let logs = databaseLocation + "logs/";
+    public static let originalDatabaseLocation = NSSwiftUtils.getHomeDirectory() + "Library/Taskspace/";
+    
+    public static var databaseLocation = NSSwiftUtils.getHomeDirectory() + "Library/Taskspace/";
+    public static var containersPath = databaseLocation + "containers/";
+    public static var keydataStore = databaseLocation + "keys/";
+    public static var buffer_switch = databaseLocation + "buffer_switch";
+    public static var buffer_update = databaseLocation + "buffer_update";
+    public static var logs = databaseLocation + "logs/";
     
     public static let key_selected = "selected";
     public static let key_inProcess = "process";
+    public static let key_root_emu = "root_emu";
     
-    public static func initDirectory() -> Bool {
+    public static func _init(forceRoot: String?) -> Bool {
+        if forceRoot != nil {
+            var root = forceRoot
+            if !forceRoot!.replacingOccurrences(of: "\n", with: "").hasSuffix("/") {
+                root = forceRoot! + "/"
+            }
+            databaseLocation = root!
+            containersPath = databaseLocation + "containers/";
+            keydataStore = databaseLocation + "keys/";
+            buffer_switch = databaseLocation + "buffer_switch";
+            buffer_update = databaseLocation + "buffer_update";
+            logs = databaseLocation + "logs/";
+        }else if verify(key: key_root_emu) && !getData(key: key_root_emu).replacingOccurrences(of: "\n", with: "").elementsEqual("") {
+            databaseLocation = getData(key: key_root_emu)
+            containersPath = databaseLocation + "containers/";
+            keydataStore = databaseLocation + "keys/";
+            buffer_switch = databaseLocation + "buffer_switch";
+            buffer_update = databaseLocation + "buffer_update";
+            logs = databaseLocation + "logs/";
+        }
+        
         if !(NSSwiftUtils.doesTheFileExist(at: containersPath)
             && NSSwiftUtils.doesTheFileExist(at: logs)
                 && NSSwiftUtils.doesTheFileExist(at: keydataStore)) {
+            
             return NSSwiftUtils.createDirectoryWithParentsDirectories(to: containersPath)
             && NSSwiftUtils.createDirectoryWithParentsDirectories(to: logs)
             && NSSwiftUtils.createDirectoryWithParentsDirectories(to: keydataStore)
@@ -47,6 +71,7 @@ public class Database {
     public static func addKey(key: String, data: String) -> Bool {
         return (NSSwiftUtils.executeShellScript("/bin/sh", "-c", "echo \(data) > \(keydataStore + key)") == 0)
     }
+    
     
     public static func removeKey(key: String) -> Bool {
         return NSSwiftUtils.deleteFile(at: keydataStore + key)
